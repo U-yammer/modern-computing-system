@@ -7,7 +7,7 @@
  * The ALU (Arithmetic Logic Unit).
  * Computes one of the following functions:
  * x+y, x-y, y-x, 0, 1, -1, x, y, -x, -y, !x, !y,
- * x+1, y+1, x-1, y-1, x&y, x|y on two 16-bit inputs, 
+ * x+1, y+1, x-1, y-1, x&y, x|y on two 16-bit inputs,
  * according to 6 input bits denoted zx,nx,zy,ny,f,no.
  * In addition, the ALU computes two 1-bit outputs:
  * if the ALU output == 0, zr is set to 1; otherwise zr is set to 0;
@@ -27,8 +27,8 @@
 // if (out < 0) set ng = 1
 
 CHIP ALU {
-    IN  
-        x[16], y[16],  // 16-bit inputs        
+    IN
+        x[16], y[16],  // 16-bit inputs
         zx, // zero the x input?
         nx, // negate the x input?
         zy, // zero the y input?
@@ -36,11 +36,36 @@ CHIP ALU {
         f,  // compute out = x + y (if 1) or x & y (if 0)
         no; // negate the out output?
 
-    OUT 
+    OUT
         out[16], // 16-bit output
         zr, // 1 if (out == 0), 0 otherwise
         ng; // 1 if (out < 0),  0 otherwise
 
     PARTS:
    // Put you code here:
+
+   // Filter of X
+    Mux16(a = x, b[0..15] = false, sel = zx, out = tmpX); // 0 or ...
+    Not16(in = tmpX, out = notX);
+    Mux16(a = tmpX, b = notX, sel = nx, out = finalX);
+
+    // Filter of Y
+    Mux16(a = y, b[0..15] = false, sel = zy, out = tmpY); // 0 or ...
+    Not16(in = tmpY, out = notY);
+    Mux16(a = tmpY, b = notY, sel = ny, out = finalY);
+
+    Add16(a = finalX, b = finalY, out = addOut);
+    And16(a = finalX, b = finalY, out = andOut);
+    Mux16(a = andOut, b = addOut, sel = f, out = finalOut);
+
+    Not16(in = finalOut, out = notFinalOut);
+    Mux16(a = finalOut, b = notFinalOut, sel = no, out = out, out[0..7] = tmpOutA, out[8..15] = tmpOutB, out[15] = ng);
+    // Mux16(a = finalOut, b = notFinalOut, sel = no, out = tmpOut);
+
+    // Mux(a = true, b = false, sel = tmpOut[15], out = zr);
+    Or8Way(in = tmpOutA, out = zeroflagA);
+    Or8Way(in = tmpOutB, out = zeroflagB);
+    Or(a = zeroflagA, b = zeroflagB, out = zerofinalFlag);
+
+    Mux(a = true, b = false, sel = zerofinalFlag, out = zr);
 }
