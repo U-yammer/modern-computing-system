@@ -4,7 +4,7 @@
 // File name: projects/03/a/PC.hdl
 
 /**
- * A 16-bit counter with load and reset control bits.
+ * A 16-bit counter with load and reset control bits.Pna
  * if      (reset[t] == 1) out[t+1] = 0
  * else if (load[t] == 1)  out[t+1] = in[t]
  * else if (inc[t] == 1)   out[t+1] = out[t] + 1  (integer addition)
@@ -17,4 +17,11 @@ CHIP PC {
 
     PARTS:
     // Put your code here:
+    Inc16(in = tmpIn, out = incOut);
+
+    Mux16(a = tmpIn, b = incOut, sel = inc, out = tmpOut0);
+    Mux16(a = tmpOut0, b = in, sel = load, out = tmpOut1);
+    Mux16(a = tmpOut1, b = false, sel = reset, out = tmpOut3);
+
+    Register(in = tmpOut3, load = true, out = out, out = tmpIn);
 }
